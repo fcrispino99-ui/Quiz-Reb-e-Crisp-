@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz di Coppia 💡</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Space+Grotesk:wght@400;500;700&display=swap');
+
+  :root {
+    --yellow: #FFD93D;
+    --pink: #FF6B9D;
+    --purple: #A855F7;
+    --blue: #4FC3F7;
+    --green: #6BCB77;
+    --orange: #FF8C42;
+    --bg: #0F0A1E;
+    --card: #1A1035;
+    --card2: #221545;
+    --text: #F0ECF8;
+    --muted: #8B7BA8;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px 48px;
+    overflow-x: hidden;
+  }
+
+  /* Animated background blobs */
+  body::before, body::after {
+    content: '';
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.15;
+    pointer-events: none;
+    z-index: 0;
+    animation: blobMove 8s ease-in-out infinite alternate;
+  }
+  body::before {
+    width: 400px; height: 400px;
+    background: var(--purple);
+    top: -100px; left: -100px;
+  }
+  body::after {
+    width: 350px; height: 350px;
+    background: var(--pink);
+    bottom: -80px; right: -80px;
+    animation-delay: -4s;
+  }
+  @keyframes blobMove {
+    from { transform: translate(0,0) scale(1); }
+    to { transform: translate(40px, 30px) scale(1.1); }
+  }
+
+  .wrapper { position: relative; z-index: 1; width: 100%; max-width: 680px; }
+
+  /* Header */
+  .header {
+    text-align: center;
+    margin-bottom: 28px;
+  }
+  .header h1 {
+    font-size: 2.4rem;
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--yellow), var(--pink), var(--purple));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.1;
+    margin-bottom: 6px;
+  }
+  .header p {
+    color: var(--muted);
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  /* Score bar */
+  .scoreboard {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+    justify-content: center;
+  }
+  .score-card {
+    flex: 1;
+    background: var(--card);
+    border-radius: 16px;
+    padding: 14px 16px;
+    text-align: center;
+    border: 2px solid transparent;
+    transition: border-color 0.3s;
+    max-width: 200px;
+  }
+  .score-card.active-turn {
+    border-color: var(--yellow);
+    box-shadow: 0 0 20px rgba(255,217,61,0.2);
+  }
+  .score-card .player-name {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+  }
+  .score-card .score-num {
+    font-size: 2rem;
+    font-weight: 900;
+    line-height: 1;
+  }
+  .score-card.p1 .score-num { color: var(--pink); }
+  .score-card.p2 .score-num { color: var(--blue); }
+  .score-divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    color: var(--muted);
+    font-weight: 900;
+  }
+
+  /* Round indicator */
+  .round-info {
+    text-align: center;
+    margin-bottom: 20px;
+    color: var(--muted);
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .round-dots {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 8px;
+  }
+  .dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--card2);
+    transition: all 0.3s;
+  }
+  .dot.done { background: var(--green); }
+  .dot.current { background: var(--yellow); transform: scale(1.3); }
+
+  /* Main card */
+  .main-card {
+    background: var(--card);
+    border-radius: 24px;
+    padding: 28px;
+    margin-bottom: 16px;
+    border: 1px solid rgba(255,255,255,0.06);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  }
+
+  /* Turn badge */
+  .turn-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--card2);
+    border-radius: 100px;
+    padding: 8px 16px;
+    font-size: 0.85rem;
+    font-weight: 800;
+    margin-bottom: 20px;
+    color: var(--yellow);
+    border: 1px solid rgba(255,217,61,0.2);
+  }
+  .turn-badge .dot-live {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--yellow);
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.8); }
+  }
+
+  /* Phase label */
+  .phase-label {
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+
+  /* Question area */
+  .question-display {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.35rem;
+    font-weight: 700;
+    line-height: 1.5;
+    color: var(--text);
+    min-height: 80px;
+    margin-bottom: 24px;
+    padding: 20px;
+    background: var(--card2);
+    border-radius: 16px;
+    border-left: 4px solid var(--purple);
+  }
+  .question-display.empty {
+    color: var(--muted);
+    font-size: 1rem;
+    font-style: italic;
+    border-left-color: var(--card2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+
+  /* Answer / explanation area */
+  .answer-box {
+    background: rgba(107,203,119,0.08);
+    border: 1px solid rgba(107,203,119,0.3);
+    border-radius: 16px;
+    padding: 18px;
+    margin-bottom: 20px;
+    display: none;
+    animation: slideIn 0.4s ease;
+  }
+  .answer-box.visible { display: block; }
+  .answer-box .answer-label {
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--green);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .answer-box .answer-text {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--text);
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Question input */
+  .input-area {
+    margin-bottom: 20px;
+  }
+  .input-area label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .input-area textarea {
+    width: 100%;
+    background: var(--card2);
+    border: 2px solid rgba(255,255,255,0.08);
+    border-radius: 14px;
+    padding: 14px 16px;
+    color: var(--text);
+    font-family: 'Nunito', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    resize: none;
+    outline: none;
+    transition: border-color 0.2s;
+    min-height: 80px;
+  }
+  .input-area textarea:focus {
+    border-color: var(--purple);
+  }
+  .input-area textarea::placeholder { color: var(--muted); }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 24px;
+    border-radius: 100px;
+    border: none;
+    font-family: 'Nunito', sans-serif;
+    font-size: 1rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .btn:active { transform: scale(0.96); }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--purple), var(--pink));
+    color: white;
+    box-shadow: 0 4px 20px rgba(168,85,247,0.4);
+  }
+  .btn-primary:hover { box-shadow: 0 6px 28px rgba(168,85,247,0.6); transform: translateY(-1px); }
+  .btn-secondary {
+    background: var(--card2);
+    color: var(--text);
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .btn-secondary:hover { background: #2D1F5E; }
+  .btn-green {
+    background: linear-gradient(135deg, var(--green), #3AA348);
+    color: white;
+    box-shadow: 0 4px 16px rgba(107,203,119,0.3);
+  }
+  .btn-yellow {
+    background: linear-gradient(135deg, var(--yellow), var(--orange));
+    color: #1A1035;
+    box-shadow: 0 4px 16px rgba(255,217,61,0.3);
+  }
+  .btn-ai {
+    background: linear-gradient(135deg, #4FC3F7, var(--purple));
+    color: white;
+    box-shadow: 0 4px 16px rgba(79,195,247,0.3);
+    font-size: 0.9rem;
+  }
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+
+  .btn-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .btn-row .btn { flex: 1; min-width: 120px; }
+
+  /* Loading spinner */
+  .spinner {
+    width: 18px; height: 18px;
+    border: 3px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: none;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Topic chips */
+  .topic-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .chip {
+    padding: 6px 14px;
+    border-radius: 100px;
+    font-size: 0.8rem;
+    font-weight: 800;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.2s;
+    background: var(--card2);
+    color: var(--muted);
+  }
+  .chip:hover, .chip.selected {
+    color: white;
+    border-color: currentColor;
+  }
+  .chip[data-topic="scienza"]:hover, .chip[data-topic="scienza"].selected { color: var(--blue); }
+  .chip[data-topic="arte"]:hover, .chip[data-topic="arte"].selected { color: var(--pink); }
+  .chip[data-topic="storia"]:hover, .chip[data-topic="storia"].selected { color: var(--orange); }
+  .chip[data-topic="natura"]:hover, .chip[data-topic="natura"].selected { color: var(--green); }
+  .chip[data-topic="pop"]:hover, .chip[data-topic="pop"].selected { color: var(--yellow); }
+  .chip[data-topic="filosofia"]:hover, .chip[data-topic="filosofia"].selected { color: var(--purple); }
+  .chip[data-topic="random"]:hover, .chip[data-topic="random"].selected { color: var(--text); }
+
+  /* Result overlay */
+  .result-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(10,5,30,0.85);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    animation: fadeIn 0.3s ease;
+  }
+  .result-overlay.visible { display: flex; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .result-box {
+    background: var(--card);
+    border-radius: 28px;
+    padding: 36px 32px;
+    text-align: center;
+    max-width: 420px;
+    width: 100%;
+    border: 1px solid rgba(255,255,255,0.08);
+    animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  @keyframes popIn { from { opacity:0; transform: scale(0.8); } to { opacity:1; transform: scale(1); } }
+  .result-box .trophy { font-size: 4rem; margin-bottom: 12px; }
+  .result-box h2 {
+    font-size: 1.8rem;
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--yellow), var(--pink));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 8px;
+  }
+  .result-box p { color: var(--muted); margin-bottom: 24px; line-height: 1.5; }
+  .final-scores {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    margin-bottom: 28px;
+  }
+  .final-score-item {
+    background: var(--card2);
+    border-radius: 16px;
+    padding: 16px 24px;
+    text-align: center;
+  }
+  .final-score-item .name { font-size: 0.8rem; font-weight: 800; color: var(--muted); text-transform: uppercase; margin-bottom: 4px; }
+  .final-score-item .num { font-size: 2.2rem; font-weight: 900; }
+  .final-score-item.p1 .num { color: var(--pink); }
+  .final-score-item.p2 .num { color: var(--blue); }
+
+  /* Points popup */
+  .points-popup {
+    position: fixed;
+    pointer-events: none;
+    font-size: 2rem;
+    font-weight: 900;
+    color: var(--green);
+    z-index: 200;
+    animation: floatUp 1.2s ease forwards;
+    text-shadow: 0 2px 10px rgba(107,203,119,0.5);
+  }
+  @keyframes floatUp {
+    0% { opacity: 1; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-80px) scale(1.4); }
+  }
+
+  /* Player name setup */
+  .setup-screen {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .setup-screen h2 {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--muted);
+    text-align: center;
+    margin-bottom: 4px;
+  }
+  .name-input-group { display: flex; flex-direction: column; gap: 8px; }
+  .name-input-group label { font-size: 0.8rem; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+  .name-input {
+    background: var(--card2);
+    border: 2px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 12px 16px;
+    color: var(--text);
+    font-family: 'Nunito', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .name-input:focus { border-color: var(--purple); }
+  .name-input.p1:focus { border-color: var(--pink); }
+  .name-input.p2:focus { border-color: var(--blue); }
+
+  /* Reveal who guessed */
+  .guess-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .guess-btn {
+    padding: 14px;
+    border-radius: 14px;
+    border: 2px solid rgba(255,255,255,0.08);
+    background: var(--card2);
+    color: var(--text);
+    font-family: 'Nunito', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .guess-btn:hover { border-color: var(--green); color: var(--green); }
+  .guess-btn .icon { font-size: 1.4rem; }
+
+  /* Confetti canvas */
+  #confetti-canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 150;
+  }
+
+  /* Separator */
+  .sep { height: 1px; background: rgba(255,255,255,0.06); margin: 20px 0; }
+
+  @media (max-width: 500px) {
+    .header h1 { font-size: 1.8rem; }
+    .main-card { padding: 20px; }
+    .question-display { font-size: 1.15rem; }
+  }
+</style>
+</head>
+<body>
+<canvas id="confetti-canvas"></canvas>
+
+<div class="wrapper">
+  <div class="header">
+    <h1>Quiz di Coppia 💡</h1>
+    <p>3 domande · a turno · chi sa vince</p>
+  </div>
+
+  <!-- SETUP SCREEN -->
+  <div class="main-card" id="setup-card">
+    <div class="setup-screen">
+      <h2>Come vi chiamate? 👫</h2>
+      <div class="name-input-group">
+        <label>Giocatore 1</label>
+        <input class="name-input p1" id="name1" type="text" placeholder="Es. Marco" maxlength="15">
+      </div>
+      <div class="name-input-group">
+        <label>Giocatore 2</label>
+        <input class="name-input p2" id="name2" type="text" placeholder="Es. Sara" maxlength="15">
+      </div>
+      <button class="btn btn-primary" onclick="startGame()" style="margin-top:8px">
+        Iniziamo! 🚀
+      </button>
+    </div>
+  </div>
+
+  <!-- GAME SCREEN -->
+  <div id="game-screen" style="display:none">
+    <!-- Scoreboard -->
+    <div class="scoreboard">
+      <div class="score-card p1" id="sc1">
+        <div class="player-name" id="sc-name1">—</div>
+        <div class="score-num" id="score1">0</div>
+      </div>
+      <div class="score-divider">vs</div>
+      <div class="score-card p2" id="sc2">
+        <div class="player-name" id="sc-name2">—</div>
+        <div class="score-num" id="score2">0</div>
+      </div>
+    </div>
+
+    <!-- Round dots -->
+    <div class="round-info">
+      <span id="round-label">Domanda 1 di 3</span>
+      <div class="round-dots" id="round-dots"></div>
+    </div>
+
+    <!-- Main card -->
+    <div class="main-card" id="phase-ask">
+      <div class="turn-badge">
+        <div class="dot-live"></div>
+        <span id="turn-label">Turno di —</span>
+      </div>
+
+      <!-- PHASE 1: Write question -->
+      <div id="phase-write">
+        <div class="phase-label">✏️ Scrivi la tua domanda</div>
+        <div class="input-area">
+          <textarea id="question-input" placeholder="Digita la tua domanda…" rows="3"></textarea>
+        </div>
+
+        <div class="phase-label" style="margin-bottom:8px">🎲 Oppure genera con AI</div>
+        <div class="topic-chips" id="topic-chips">
+          <span class="chip" data-topic="scienza">🔬 Scienza</span>
+          <span class="chip" data-topic="arte">🎨 Arte</span>
+          <span class="chip" data-topic="storia">📜 Storia</span>
+          <span class="chip" data-topic="natura">🌿 Natura</span>
+          <span class="chip" data-topic="pop">🎬 Pop culture</span>
+          <span class="chip" data-topic="filosofia">🧠 Filosofia</span>
+          <span class="chip selected" data-topic="random">🎲 Sorpresa</span>
+        </div>
+        <div class="btn-row" style="margin-bottom:20px">
+          <button class="btn btn-ai" id="ai-btn" onclick="generateQuestion()">
+            <div class="spinner" id="ai-spinner"></div>
+            <span id="ai-btn-text">✨ Genera domanda AI</span>
+          </button>
+        </div>
+
+        <div class="sep"></div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="submitQuestion()">Fai la domanda →</button>
+        </div>
+      </div>
+
+      <!-- PHASE 2: Answer -->
+      <div id="phase-answer" style="display:none">
+        <div class="phase-label">💬 <span id="answerer-name">—</span> deve rispondere</div>
+        <div class="question-display" id="question-display-text"></div>
+
+        <div class="btn-row">
+          <button class="btn btn-green" onclick="showAnswer()">Rivela risposta & spiegazione 👁️</button>
+        </div>
+      </div>
+
+      <!-- PHASE 3: Reveal + point -->
+      <div id="phase-reveal" style="display:none">
+        <div class="phase-label">💬 <span id="answerer-name2">—</span> ha risposto…</div>
+        <div class="question-display" id="question-display-text2"></div>
+
+        <div class="answer-box visible" id="answer-box">
+          <div class="answer-label">✅ Risposta & Spiegazione</div>
+          <div class="answer-text" id="answer-text-display">Caricamento…</div>
+        </div>
+
+        <div class="phase-label">Chi ha indovinato?</div>
+        <div class="guess-buttons" id="guess-buttons">
+          <!-- dynamically filled -->
+        </div>
+        <button class="btn btn-secondary" onclick="noOneGuessed()" style="width:100%">❌ Nessuno dei due</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Result overlay -->
+<div class="result-overlay" id="result-overlay">
+  <div class="result-box">
+    <div class="trophy">🏆</div>
+    <h2 id="result-title">Fine!</h2>
+    <p id="result-subtitle"></p>
+    <div class="final-scores">
+      <div class="final-score-item p1">
+        <div class="name" id="final-name1">—</div>
+        <div class="num" id="final-score1">0</div>
+      </div>
+      <div class="final-score-item p2">
+        <div class="name" id="final-name2">—</div>
+        <div class="num" id="final-score2">0</div>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="resetGame()" style="width:100%">🔄 Ricomincia</button>
+  </div>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+let state = {
+  names: ['', ''],
+  scores: [0, 0],
+  round: 0,        // 0-2
+  asker: 0,        // whose turn to ask (0 or 1)
+  question: '',
+  answer: '',
+  phase: 'write',  // write | answer | reveal
+  selectedTopic: 'random'
+};
+const TOTAL_ROUNDS = 6; // 3 per player (alternating)
+
+// ── Setup ──────────────────────────────────────────────────────────────────
+function startGame() {
+  const n1 = document.getElementById('name1').value.trim() || 'Giocatore 1';
+  const n2 = document.getElementById('name2').value.trim() || 'Giocatore 2';
+  state.names = [n1, n2];
+  state.scores = [0, 0];
+  state.round = 0;
+  state.asker = 0;
+  document.getElementById('setup-card').style.display = 'none';
+  document.getElementById('game-screen').style.display = 'block';
+  updateUI();
+}
+
+// ── UI ─────────────────────────────────────────────────────────────────────
+function updateUI() {
+  const asker = state.asker;
+  const answerer = 1 - asker;
+
+  // Scores
+  document.getElementById('sc-name1').textContent = state.names[0];
+  document.getElementById('sc-name2').textContent = state.names[1];
+  document.getElementById('score1').textContent = state.scores[0];
+  document.getElementById('score2').textContent = state.scores[1];
+  document.getElementById('sc1').classList.toggle('active-turn', asker === 0);
+  document.getElementById('sc2').classList.toggle('active-turn', asker === 1);
+
+  // Round
+  const questionNum = Math.floor(state.round / 2) + 1;
+  document.getElementById('round-label').textContent = `Domanda ${state.round + 1} di ${TOTAL_ROUNDS}`;
+  const dots = document.getElementById('round-dots');
+  dots.innerHTML = '';
+  for (let i = 0; i < TOTAL_ROUNDS; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i < state.round ? ' done' : i === state.round ? ' current' : '');
+    dots.appendChild(d);
+  }
+
+  // Turn label
+  document.getElementById('turn-label').textContent = `Turno di ${state.names[asker]}`;
+  document.querySelectorAll('#answerer-name, #answerer-name2').forEach(el => {
+    el.textContent = state.names[answerer];
+  });
+
+  // Phases
+  document.getElementById('phase-write').style.display = state.phase === 'write' ? 'block' : 'none';
+  document.getElementById('phase-answer').style.display = state.phase === 'answer' ? 'block' : 'none';
+  document.getElementById('phase-reveal').style.display = state.phase === 'reveal' ? 'block' : 'none';
+
+  if (state.phase === 'answer') {
+    document.getElementById('question-display-text').textContent = state.question;
+  }
+  if (state.phase === 'reveal') {
+    document.getElementById('question-display-text2').textContent = state.question;
+    document.getElementById('answer-text-display').textContent = state.answer;
+    const gb = document.getElementById('guess-buttons');
+    gb.innerHTML = '';
+    [answerer, asker].forEach(idx => {
+      const btn = document.createElement('button');
+      btn.className = 'guess-btn';
+      btn.innerHTML = `<span class="icon">${idx === 0 ? '🌸' : '⚡'}</span> ${state.names[idx]} ha indovinato`;
+      btn.onclick = () => pointTo(idx);
+      gb.appendChild(btn);
+    });
+  }
+}
+
+// ── Topic chips ────────────────────────────────────────────────────────────
+document.getElementById('topic-chips').addEventListener('click', e => {
+  const chip = e.target.closest('.chip');
+  if (!chip) return;
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+  chip.classList.add('selected');
+  state.selectedTopic = chip.dataset.topic;
+});
+
+// ── Actions ────────────────────────────────────────────────────────────────
+function submitQuestion() {
+  const q = document.getElementById('question-input').value.trim();
+  if (!q) { shakeMissing(); return; }
+  state.question = q;
+  document.getElementById('question-input').value = '';
+  state.phase = 'answer';
+  updateUI();
+}
+
+function showAnswer() {
+  state.phase = 'reveal';
+  // If answer already set by AI, show it; else generate
+  if (!state.answer) {
+    state.answer = 'Caricamento…';
+    updateUI();
+    fetchAnswer(state.question).then(ans => {
+      state.answer = ans;
+      document.getElementById('answer-text-display').textContent = ans;
+    });
+  } else {
+    updateUI();
+  }
+}
+
+function pointTo(playerIdx) {
+  state.scores[playerIdx]++;
+  showPointsPopup(playerIdx);
+  nextRound();
+}
+
+function noOneGuessed() {
+  nextRound();
+}
+
+function nextRound() {
+  state.round++;
+  if (state.round >= TOTAL_ROUNDS) {
+    showResult();
+    return;
+  }
+  state.asker = 1 - state.asker; // alternate
+  state.question = '';
+  state.answer = '';
+  state.phase = 'write';
+  updateUI();
+}
+
+// ── AI generation ──────────────────────────────────────────────────────────
+const topicLabels = {
+  scienza: 'scienza e tecnologia',
+  arte: 'arte, musica e letteratura',
+  storia: 'storia e geografia',
+  natura: 'natura e animali',
+  pop: 'cultura pop, film e serie TV',
+  filosofia: 'filosofia e psicologia',
+  random: 'qualsiasi argomento curioso e interessante'
+};
+
+async function generateQuestion() {
+  const btn = document.getElementById('ai-btn');
+  const spinner = document.getElementById('ai-spinner');
+  const btnText = document.getElementById('ai-btn-text');
+  btn.disabled = true;
+  spinner.style.display = 'block';
+  btnText.textContent = 'Generando…';
+
+  const topic = topicLabels[state.selectedTopic] || 'qualsiasi argomento';
+  const prompt = `Sei un assistente per un gioco di quiz di coppia. 
+Genera UNA sola domanda di curiosità su: ${topic}.
+La domanda deve essere interessante, non troppo facile né impossibile, adatta per un gioco leggero tra innamorati.
+Rispondi SOLO con un oggetto JSON con questi due campi:
+- "domanda": la domanda
+- "risposta": la risposta completa con una breve spiegazione (2-3 frasi)
+Nessun altro testo, nessun markdown, solo JSON puro.`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await res.json();
+    const raw = data.content.map(b => b.text || '').join('');
+    const clean = raw.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(clean);
+    document.getElementById('question-input').value = parsed.domanda;
+    state.answer = parsed.risposta;
+  } catch(e) {
+    document.getElementById('question-input').value = 'Errore nella generazione. Riprova o scrivi tu la domanda!';
+    state.answer = '';
+  }
+
+  btn.disabled = false;
+  spinner.style.display = 'none';
+  btnText.textContent = '✨ Genera domanda AI';
+}
+
+async function fetchAnswer(question) {
+  const prompt = `Sei un assistente per un gioco quiz. 
+Domanda: "${question}"
+Fornisci la risposta corretta con una breve spiegazione interessante (2-3 frasi).
+Rispondi SOLO in italiano, in modo chiaro e diretto.`;
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await res.json();
+    return data.content.map(b => b.text || '').join('').trim();
+  } catch(e) {
+    return 'Impossibile caricare la risposta. Discutetela tra di voi! 😄';
+  }
+}
+
+// ── Result ─────────────────────────────────────────────────────────────────
+function showResult() {
+  const [s0, s1] = state.scores;
+  const [n0, n1] = state.names;
+  document.getElementById('final-name1').textContent = n0;
+  document.getElementById('final-name2').textContent = n1;
+  document.getElementById('final-score1').textContent = s0;
+  document.getElementById('final-score2').textContent = s1;
+
+  let title, subtitle;
+  if (s0 === s1) {
+    title = 'Pareggio! 🤝';
+    subtitle = `${s0} punti a testa — siete perfettamente in sincronia! 💫`;
+  } else {
+    const winner = s0 > s1 ? n0 : n1;
+    const loser = s0 > s1 ? n1 : n0;
+    const ws = Math.max(s0,s1), ls = Math.min(s0,s1);
+    title = `${winner} vince! 🎉`;
+    subtitle = `${ws} a ${ls} — ${loser} si rivincerà la prossima volta! 😄`;
+  }
+  document.getElementById('result-title').textContent = title;
+  document.getElementById('result-subtitle').textContent = subtitle;
+  document.getElementById('result-overlay').classList.add('visible');
+  launchConfetti();
+}
+
+function resetGame() {
+  document.getElementById('result-overlay').classList.remove('visible');
+  state.scores = [0, 0];
+  state.round = 0;
+  state.asker = 0;
+  state.question = '';
+  state.answer = '';
+  state.phase = 'write';
+  updateUI();
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+function shakeMissing() {
+  const ta = document.getElementById('question-input');
+  ta.style.borderColor = 'var(--pink)';
+  ta.focus();
+  setTimeout(() => ta.style.borderColor = '', 800);
+}
+
+function showPointsPopup(playerIdx) {
+  const popup = document.createElement('div');
+  popup.className = 'points-popup';
+  popup.textContent = '+1 🎉';
+  popup.style.left = playerIdx === 0 ? '20%' : '60%';
+  popup.style.top = '40%';
+  document.body.appendChild(popup);
+  setTimeout(() => popup.remove(), 1200);
+}
+
+// ── Confetti ───────────────────────────────────────────────────────────────
+function launchConfetti() {
+  const canvas = document.getElementById('confetti-canvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  const colors = ['#FFD93D','#FF6B9D','#A855F7','#4FC3F7','#6BCB77','#FF8C42'];
+  const pieces = Array.from({length: 120}, () => ({
+    x: Math.random() * canvas.width,
+    y: Math.random() * -canvas.height,
+    r: Math.random() * 8 + 4,
+    c: colors[Math.floor(Math.random()*colors.length)],
+    vx: (Math.random()-0.5)*4,
+    vy: Math.random()*4+2,
+    alpha: 1,
+    rot: Math.random()*360,
+    rspeed: (Math.random()-0.5)*6
+  }));
+  let frame;
+  function draw() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    let alive = false;
+    pieces.forEach(p => {
+      if (p.y < canvas.height + 20) { alive = true; }
+      p.x += p.vx; p.y += p.vy; p.rot += p.rspeed; p.alpha -= 0.006;
+      if (p.alpha < 0) p.alpha = 0;
+      ctx.save();
+      ctx.globalAlpha = p.alpha;
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot * Math.PI/180);
+      ctx.fillStyle = p.c;
+      ctx.fillRect(-p.r/2, -p.r/2, p.r, p.r);
+      ctx.restore();
+    });
+    if (alive) frame = requestAnimationFrame(draw);
+    else { ctx.clearRect(0,0,canvas.width,canvas.height); }
+  }
+  if (frame) cancelAnimationFrame(frame);
+  draw();
+}
+</script>
+</body>
+</html>
