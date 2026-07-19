@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprachbahnhof · Verben mit Präpositionen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600&family=Public+Sans:wght@400;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --rot:#E2001A;          /* rosso segnale ferroviario */
+  --nacht:#14181D;        /* blu-nero notte */
+  --stahl:#5A6572;        /* grigio acciaio */
+  --binario:#E8EBEA;      /* grigio banchina chiaro */
+  --bianco:#FFFFFF;
+  --ok:#0E7C4A;
+  --gelb:#F5C400;         /* giallo segnaletica */
+  --radius:10px;
+  --disp:'Oswald',system-ui,sans-serif;
+  --body:'Public Sans',system-ui,sans-serif;
+  --mono:'IBM Plex Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{font-family:var(--body);background:var(--binario);color:var(--nacht);min-height:100vh}
+button{font-family:inherit;cursor:pointer;border:none;background:none}
+button:focus-visible,a:focus-visible{outline:3px solid var(--gelb);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+
+/* ---------- Insegna stazione ---------- */
+header{background:var(--nacht);color:var(--bianco);padding:16px 16px 0}
+.insegna{display:flex;align-items:baseline;gap:10px;border-bottom:3px solid var(--rot);padding-bottom:12px}
+.insegna h1{font-family:var(--disp);font-weight:600;font-size:1.35rem;letter-spacing:.04em;text-transform:uppercase}
+.insegna .sub{font-family:var(--mono);font-size:.66rem;color:#9AA4AD;letter-spacing:.05em}
+/* tabellone partenze = statistiche */
+.tabellone{display:flex;gap:0;font-family:var(--mono);font-size:.72rem;background:#0C0F12;color:var(--gelb);margin:0 -16px;padding:8px 16px;overflow-x:auto;white-space:nowrap}
+.tabellone span{padding-right:18px}
+.tabellone b{color:#fff;font-weight:500}
+
+/* ---------- Gleis-tabs ---------- */
+nav{display:flex;gap:8px;overflow-x:auto;padding:14px 16px 4px;-webkit-overflow-scrolling:touch}
+.gleis{flex:0 0 auto;background:var(--bianco);border:2px solid var(--nacht);border-radius:var(--radius);padding:8px 12px;text-align:left;min-width:118px}
+.gleis .gnum{font-family:var(--mono);font-size:.6rem;color:var(--stahl);display:block;letter-spacing:.08em}
+.gleis .gname{font-family:var(--disp);font-weight:500;font-size:.85rem;text-transform:uppercase;letter-spacing:.03em}
+.gleis.attivo{background:var(--nacht);color:var(--bianco);border-color:var(--nacht)}
+.gleis.attivo .gnum{color:var(--gelb)}
+
+main{max-width:640px;margin:0 auto;padding:12px 16px 40px}
+
+/* ---------- Carta domanda ---------- */
+.carta{background:var(--bianco);border-radius:var(--radius);box-shadow:0 1px 0 rgba(20,24,29,.12), 0 8px 24px rgba(20,24,29,.06);padding:20px 18px;margin-top:10px}
+.etichetta{font-family:var(--mono);font-size:.62rem;color:var(--stahl);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;display:flex;justify-content:space-between}
+.frase{font-size:1.22rem;line-height:1.55;font-weight:600;margin-bottom:6px}
+.frase .buco{display:inline-block;min-width:64px;border-bottom:3px solid var(--rot);text-align:center;color:var(--rot);font-family:var(--disp);padding:0 4px}
+.trad{font-size:.88rem;color:var(--stahl);font-style:italic;margin-bottom:16px}
+.opzioni{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.opzioni.larghe{grid-template-columns:1fr}
+.opt{border:2px solid var(--nacht);border-radius:var(--radius);padding:13px 10px;font-size:1.02rem;font-weight:600;background:var(--bianco);transition:transform .06s ease}
+.opt:active{transform:scale(.97)}
+.opt.giusta{background:var(--ok);border-color:var(--ok);color:#fff}
+.opt.sbagliata{background:var(--rot);border-color:var(--rot);color:#fff}
+.opt.spenta{opacity:.45}
+.opt:disabled{cursor:default}
+
+/* ---------- Annuncio (feedback) ---------- */
+.annuncio{margin-top:14px;border-radius:var(--radius);padding:13px 14px;font-size:.9rem;line-height:1.5;display:none;border-left:6px solid}
+.annuncio.mostra{display:block;animation:entra .25s ease}
+.annuncio.ok{background:#E7F4ED;border-color:var(--ok)}
+.annuncio.no{background:#FCE9EB;border-color:var(--rot)}
+.annuncio .tit{font-family:var(--disp);text-transform:uppercase;letter-spacing:.05em;font-size:.8rem;margin-bottom:4px}
+.annuncio .regola{margin-top:6px;font-size:.84rem;color:#3A434B}
+@keyframes entra{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+.avanti{margin-top:14px;width:100%;background:var(--nacht);color:#fff;font-family:var(--disp);text-transform:uppercase;letter-spacing:.08em;font-size:.95rem;padding:14px;border-radius:var(--radius);display:none}
+.avanti.mostra{display:block}
+
+/* ---------- Progressi ---------- */
+.pannello{background:var(--bianco);border-radius:var(--radius);padding:18px;margin-top:10px;box-shadow:0 1px 0 rgba(20,24,29,.12)}
+.pannello h2{font-family:var(--disp);text-transform:uppercase;font-size:1rem;letter-spacing:.05em;margin-bottom:12px}
+.statgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.stat{background:var(--binario);border-radius:8px;padding:10px;text-align:center}
+.stat .num{font-family:var(--disp);font-size:1.5rem;font-weight:600}
+.stat .lab{font-size:.68rem;color:var(--stahl);text-transform:uppercase;letter-spacing:.05em}
+.barra-riga{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:.82rem}
+.barra-riga .nome{width:120px;flex-shrink:0}
+.barra-cont{flex:1;background:var(--binario);border-radius:4px;height:14px;overflow:hidden}
+.barra{height:100%;background:var(--ok);border-radius:4px;min-width:2px}
+.barra.bassa{background:var(--rot)}
+.barra.media{background:var(--gelb)}
+.barra-riga .pct{width:44px;text-align:right;font-family:var(--mono);font-size:.72rem}
+.giorni{display:flex;gap:5px;align-items:flex-end;height:70px;margin-top:6px}
+.giorno{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:3px}
+.giorno .colonna{width:100%;max-width:34px;background:var(--nacht);border-radius:3px 3px 0 0;min-height:3px}
+.giorno .data{font-family:var(--mono);font-size:.58rem;color:var(--stahl)}
+.azzera{margin-top:16px;font-size:.78rem;color:var(--stahl);text-decoration:underline}
+.nota-storage{font-size:.72rem;color:var(--stahl);margin-top:10px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="insegna">
+    <h1>Sprachbahnhof</h1>
+    <span class="sub">VERBEN MIT PRÄPOSITIONEN · B1</span>
+  </div>
+  <div class="tabellone" id="tabellone"></div>
+</header>
+
+<nav id="nav"></nav>
+
+<main id="main"></main>
+
+<script>
+/* ============================================================
+   DATI — banca verbi e domande
+============================================================ */
+const VERBI = [
+ // [verbo, prep, caso(A/D), riflessivo, esempioDE(con {P}=prep {A}=articolo {R}=rifl), articoloGiusto, sostantivo+genere, traduzioneIT, nota]
+ {v:"warten", p:"auf", k:"A", r:false, de:"Ich warte {R}{P} {A} Bus.", art:"den", gen:"m", it:"Aspetto l'autobus.", nota:"warten auf + Akkusativ"},
+ {v:"sich freuen (futuro)", p:"auf", k:"A", r:true, de:"Ich freue {R}{P} {A} Wochenende.", art:"das", gen:"n", it:"Non vedo l'ora che arrivi il weekend.", nota:"freuen AUF = qualcosa nel futuro"},
+ {v:"sich freuen (presente)", p:"über", k:"A", r:true, de:"Ich freue {R}{P} {A} Geschenk.", art:"das", gen:"n", it:"Sono contento del regalo.", nota:"freuen ÜBER = qualcosa di presente/passato"},
+ {v:"sich ärgern", p:"über", k:"A", r:true, de:"Er ärgert {R}{P} {A} Lärm.", art:"den", gen:"m", it:"Si arrabbia per il rumore.", nota:"sich ärgern über + Akk"},
+ {v:"sprechen", p:"über", k:"A", r:false, de:"Wir sprechen {R}{P} {A} Arbeit.", art:"die", gen:"f", it:"Parliamo del lavoro.", nota:"sprechen über + Akk"},
+ {v:"sich unterhalten", p:"über", k:"A", r:true, de:"Sie unterhalten {R}{P} {A} Film.", art:"den", gen:"m", it:"Chiacchierano del film.", nota:"sich unterhalten über + Akk"},
+ {v:"nachdenken", p:"über", k:"A", r:false, de:"Ich denke {R}{P} {A} Angebot nach.", art:"das", gen:"n", it:"Rifletto sull'offerta.", nota:"nachdenken über + Akk (separabile!)"},
+ {v:"sich kümmern", p:"um", k:"A", r:true, de:"Sie kümmert {R}{P} {A} Katze.", art:"die", gen:"f", it:"Si prende cura del gatto.", nota:"sich kümmern UM (non auf!)"},
+ {v:"bitten", p:"um", k:"A", r:false, de:"Ich bitte dich {R}{P} {A} Gefallen.", art:"einen", gen:"m", it:"Ti chiedo un favore.", nota:"bitten um + Akk"},
+ {v:"sich erinnern", p:"an", k:"A", r:true, de:"Erinnerst du {R}{P} {A} Urlaub?", art:"den", gen:"m", it:"Ti ricordi delle vacanze?", nota:"sich erinnern AN + AKKUSATIV"},
+ {v:"denken", p:"an", k:"A", r:false, de:"Ich denke oft {R}{P} {A} Prüfung.", art:"die", gen:"f", it:"Penso spesso all'esame.", nota:"denken an + Akk"},
+ {v:"sich gewöhnen", p:"an", k:"A", r:true, de:"Ich gewöhne {R}{P} {A} Wetter.", art:"das", gen:"n", it:"Mi abituo al clima.", nota:"sich gewöhnen an + Akk"},
+ {v:"sich vorbereiten", p:"auf", k:"A", r:true, de:"Sie bereitet {R}{P} {A} Prüfung vor.", art:"die", gen:"f", it:"Si prepara per l'esame.", nota:"sich vorbereiten auf + Akk (separabile: ...vor!)"},
+ {v:"sich interessieren", p:"für", k:"A", r:true, de:"Er interessiert {R}{P} {A} Musik von Bach.", art:"die", gen:"f", it:"Si interessa della musica di Bach.", nota:"sich interessieren für + Akk"},
+ {v:"danken", p:"für", k:"A", r:false, de:"Ich danke dir {R}{P} {A} Hilfe.", art:"die", gen:"f", it:"Ti ringrazio per l'aiuto.", nota:"danken für + Akk"},
+ {v:"sich entschuldigen", p:"für", k:"A", r:true, de:"Sie entschuldigt {R}{P} {A} Verspätung.", art:"die", gen:"f", it:"Si scusa per il ritardo.", nota:"-ung = sempre femminile → die"},
+ {v:"träumen", p:"von", k:"D", r:false, de:"Ich träume {R}{P} {A} neuen Auto.", art:"einem", gen:"n", it:"Sogno una macchina nuova.", nota:"träumen von + DATIVO"},
+ {v:"erzählen", p:"von", k:"D", r:false, de:"Erzähl mir {P} {A} Reise!", art:"deiner", gen:"f", it:"Raccontami del tuo viaggio!", nota:"erzählen von + Dativo"},
+ {v:"sich verabschieden", p:"von", k:"D", r:true, de:"Wir verabschieden {R}{P} {A} Gästen.", art:"den", gen:"pl", it:"Ci congediamo dagli ospiti.", nota:"von + Dativo · plurale dativo: den ...+n"},
+ {v:"sich treffen", p:"mit", k:"D", r:true, de:"Ich treffe {R}{P} {A} Freundin.", art:"meiner", gen:"f", it:"Mi incontro con la mia amica.", nota:"sich treffen mit + DATIVO"},
+ {v:"sich beschäftigen", p:"mit", k:"D", r:true, de:"Er beschäftigt {R}{P} {A} Problem.", art:"dem", gen:"n", it:"Si occupa del problema.", nota:"mit + Dativo"},
+ {v:"telefonieren", p:"mit", k:"D", r:false, de:"Ich telefoniere {R}{P} {A} Chef.", art:"meinem", gen:"m", it:"Telefono con il mio capo.", nota:"mit + Dativo"},
+ {v:"fragen", p:"nach", k:"D", r:false, de:"Er fragt {R}{P} {A} Weg.", art:"dem", gen:"m", it:"Chiede la strada.", nota:"fragen nach + Dativo"},
+ {v:"suchen", p:"nach", k:"D", r:false, de:"Ich suche {R}{P} {A} Brille.", art:"meiner", gen:"f", it:"Cerco i miei occhiali.", nota:"suchen nach + Dativo"},
+ {v:"teilnehmen", p:"an", k:"D", r:false, de:"Sie nimmt {P} {A} Kurs teil.", art:"dem", gen:"m", it:"Partecipa al corso.", nota:"teilnehmen an + DATIVO (≠ erinnern an + Akk!)"},
+ {v:"sich bedanken", p:"bei", k:"D", r:true, de:"Ich bedanke {R}{P} dir.", art:"", gen:"", it:"Ti ringrazio.", nota:"sich bedanken bei + Dativo"},
+ {v:"Angst haben", p:"vor", k:"D", r:false, de:"Sie hat Angst {P} {A} Prüfung.", art:"der", gen:"f", it:"Ha paura dell'esame.", nota:"Angst haben vor + DATIVO"}
+];
+
+const PREPS = ["auf","über","um","an","für","von","mit","nach","bei","vor"];
+const RIF = {ich:"mich", du:"dich", er:"sich", sie:"sich", wir:"uns"};
+
+/* Generatore domande per modalità */
+function frase(v, campi){ // campi: oggetto {P,A,R} → valore o "___"
+  let s = v.de;
+  const rWord = rifPronome(v.de);
+  s = s.replace("{R}", campi.R==="___" ? "___ " : (v.r ? rWord+" " : ""));
+  s = s.replace("{P}", campi.P==="___" ? "___" : v.p);
+  s = s.replace("{A}", campi.A==="___" ? "___" : v.art);
+  return s.replace(/\s+/g," ").replace(" .",".").trim();
+}
+function rifPronome(de){
+  if(/^Ich /.test(de)) return "mich";
+  if(/^(Erinnerst|Kannst) du|^Du /.test(de)) return "dich";
+  if(/^Wir /.test(de)) return "uns";
+  return "sich";
+}
+function mescola(a){a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function scegli(pool, giusta, n){
+  const altri = mescola(pool.filter(x=>x!==giusta)).slice(0,n-1);
+  return mescola([giusta,...altri]);
+}
+
+function generaDomanda(modo){
+  if(modo==="mix") modo = mescola(["prep","kasus","reflexiv","dar"])[0];
+  const v = pescaVerbo(modo);
+  const q = {modo, id:modo+"|"+v.v, it:v.it, nota:v.nota};
+
+  if(modo==="prep"){
+    q.frase = frase(v,{P:"___"});
+    q.opts = scegli(PREPS, v.p, 4);
+    q.giusta = v.p;
+    q.tit = "PREPOSIZIONE MANCANTE";
+  }
+  else if(modo==="kasus"){
+    if(!v.art) return generaDomanda("kasus");
+    q.frase = frase(v,{A:"___"});
+    const pool = distrattoriArt(v.art);
+    q.opts = scegli(pool, v.art, 4);
+    q.giusta = v.art;
+    q.tit = "CASO GIUSTO · "+(v.k==="A"?"serve l'ACCUSATIVO":"serve il DATIVO");
+  }
+  else if(modo==="reflexiv"){
+    if(!v.de.includes("{R}")) return generaDomanda("reflexiv");
+    q.frase = frase(v,{R:"___"});
+    const rWord = rifPronome(v.de);
+    q.giusta = v.r ? rWord : "— (niente)";
+    let base = [q.giusta];
+    if(q.giusta!=="— (niente)") base.push("— (niente)");
+    const altri = mescola(["mich","dich","sich","uns"].filter(x=>x!==q.giusta));
+    q.opts = mescola(base.concat(altri).slice(0,4));
+    q.tit = "RIFLESSIVO: SERVE?";
+  }
+  else if(modo==="dar"){
+    const persona = Math.random()<0.4;
+    if(persona){
+      const persone = [["tua sorella","sie"],["tuo fratello","ihn"],["Paul","ihn"],["tua nonna","sie"],["il tuo capo","ihn"]];
+      const [nome, pronA] = mescola(persone)[0];
+      const compat = VERBI.filter(x=>["auf","über","um","an","für","von","mit"].includes(x.p) && x.de.includes("{R}"));
+      const vv = mescola(compat)[0];
+      const rW = rifPronome(vv.de);
+      const prep = vv.p;
+      const pronD = pronA==="ihn" ? "ihm" : "ihr";
+      const giustoP = vv.k==="A" ? pronA : pronD;
+      const sbagliatoP = vv.k==="A" ? pronD : pronA;
+      const darC = "da"+(["auf","über","um","an"].includes(prep)?"r":"")+prep;
+      q.frase = vv.de.split("{")[0].trim()+" "+(vv.r?rW+" ":"")+"___ <span style='color:var(--stahl);font-weight:400'>(= "+nome+", persona \ud83d\udc64)</span>";
+      q.giusta = prep+" "+giustoP;
+      q.opts = mescola([q.giusta, darC, prep+" "+sbagliatoP, prep+" "+(pronA==="sie"?"ihn":"sie")]);
+      q.nota = "PERSONA \u2192 preposizione + pronome. "+vv.v+" "+prep+" + "+(vv.k==="A"?"Akkusativ (ihn/sie)":"DATIVO (ihm/ihr)")+". Il da(r)-composto vale solo per le COSE.";
+      q.tit = "PERSONA O COSA?";
+      q.it = "";
+      q.id = "dar|"+vv.v;
+    } else {
+      const compat = VERBI.filter(x=>["auf","über","um","an","von","mit","für"].includes(x.p) && x.art && x.de.includes("{A} "));
+      const vv = mescola(compat)[0];
+      const darC = "da"+(["auf","über","um","an"].includes(vv.p)?"r":"")+vv.p;
+      const rW = rifPronome(vv.de);
+      const oggetto = vv.art+" "+vv.de.split("{A} ")[1].split(/[ .!?]/)[0];
+      q.frase = vv.de.split("{")[0].trim()+" "+(vv.r?rW+" ":"")+"___ <span style='color:var(--stahl);font-weight:400'>(= "+oggetto+", cosa \ud83d\udce6)</span>";
+      q.giusta = darC;
+      const altri = mescola(["darauf","dar\u00fcber","damit","davon","daran","darum","daf\u00fcr"].filter(x=>x!==darC)).slice(0,2);
+      q.opts = mescola([darC, vv.p+" es", ...altri]);
+      q.nota = "COSA \u2192 da(r)-composto ("+darC+"). \u00ab"+vv.p+" es\u00bb non esiste! La -r- entra se la preposizione inizia per vocale.";
+      q.tit = "PERSONA O COSA?";
+      q.it = vv.it;
+      q.id = "dar|"+vv.v;
+    }
+  }
+  return q;
+}
+
+function distrattoriArt(giusto){
+  const gruppi = {
+    "den":["die","das","dem"], "die":["den","das","der"], "das":["den","die","dem"],
+    "dem":["den","der","das"], "der":["die","dem","den"],
+    "einen":["eine","ein","einem"], "einem":["einen","einer","eine"],
+    "meiner":["meine","meinem","meinen"], "meinem":["meinen","meiner","meine"],
+    "deiner":["deine","deinem","deinen"]
+  };
+  return [giusto, ...(gruppi[giusto]||["den","die","das"])];
+}
+
+/* pesca con ripetizione degli errori */
+function pescaVerbo(modo){
+  const errori = stato.wrong[modo]||[];
+  if(errori.length && Math.random()<0.45){
+    const v = VERBI.find(x=>errori.includes(x.v));
+    if(v) return v;
+  }
+  return mescola(VERBI)[0];
+}
+
+/* ============================================================
+   STATO + STORAGE
+============================================================ */
+let stato = {tot:0, ok:0, streak:0, best:0, modi:{}, wrong:{}, giorni:{}};
+let storageOk = false;
+
+function caricaStato(){
+  try{
+    const r = localStorage.getItem("sprachbahnhof-stato");
+    if(r){ stato = {...stato, ...JSON.parse(r)}; }
+    storageOk = true;
+  }catch(e){ storageOk = false; }
+  render();
+}
+function salvaStato(){
+  try{ localStorage.setItem("sprachbahnhof-stato", JSON.stringify(stato)); }
+  catch(e){ /* best effort: resta in memoria */ }
+}
+function oggi(){ const d=new Date(); return d.toISOString().slice(0,10); }
+
+/* ============================================================
+   UI
+============================================================ */
+const MODI = [
+  {id:"prep",     nome:"Preposizioni", desc:"quale preposizione?"},
+  {id:"kasus",    nome:"Casi",         desc:"Akkusativ o Dativ?"},
+  {id:"reflexiv", nome:"Riflessivi",   desc:"serve il pronome?"},
+  {id:"dar",      nome:"da(r)-",       desc:"persona o cosa?"},
+  {id:"mix",      nome:"Misto",        desc:"tutto insieme"},
+  {id:"prog",     nome:"Progressi",    desc:"statistiche"}
+];
+let modoAttivo = "mix";
+let domanda = null;
+let risposto = false;
+
+const nav = document.getElementById("nav");
+const main = document.getElementById("main");
+const tabellone = document.getElementById("tabellone");
+
+function render(){
+  nav.innerHTML = MODI.map((m,i)=>
+    `<button class="gleis ${m.id===modoAttivo?'attivo':''}" onclick="vaiA('${m.id}')">
+      <span class="gnum">GLEIS ${i+1}</span><span class="gname">${m.nome}</span>
+    </button>`).join("");
+  renderTabellone();
+  if(modoAttivo==="prog") renderProgressi();
+  else renderDomanda();
+}
+function renderTabellone(){
+  const pct = stato.tot? Math.round(100*stato.ok/stato.tot) : 0;
+  const og = stato.giorni[oggi()]||{t:0,o:0};
+  tabellone.innerHTML =
+    `<span>OGGI <b>${og.o}/${og.t}</b></span>`+
+    `<span>TOTALE <b>${stato.ok}/${stato.tot}</b> (${pct}%)</span>`+
+    `<span>SERIE <b>${stato.streak}</b></span>`+
+    `<span>RECORD <b>${stato.best}</b></span>`;
+}
+function vaiA(id){ modoAttivo=id; domanda=null; risposto=false; render(); }
+window.vaiA = vaiA;
+
+function renderDomanda(){
+  if(!domanda){ domanda = generaDomanda(modoAttivo); risposto=false; }
+  const q = domanda;
+  const colonne = q.opts.some(o=>o.length>10) ? "larghe" : "";
+  main.innerHTML = `
+    <div class="carta">
+      <div class="etichetta"><span>${q.tit}</span><span>${MODI.find(m=>m.id===q.modo)?.nome||""}</span></div>
+      <p class="frase">${q.frase.replace("___",'<span class="buco">?</span>')}</p>
+      ${q.it? `<p class="trad">${q.it}</p>`:""}
+      <div class="opzioni ${colonne}" id="opzioni">
+        ${q.opts.map(o=>`<button class="opt" onclick="rispondi(this,'${o.replace(/'/g,"\\'")}')">${o}</button>`).join("")}
+      </div>
+      <div class="annuncio" id="annuncio"></div>
+      <button class="avanti" id="avanti" onclick="prossima()">Prossima frase →</button>
+    </div>`;
+}
+function rispondi(btn, scelta){
+  if(risposto) return;
+  risposto = true;
+  const q = domanda;
+  const corretta = scelta === q.giusta;
+  document.querySelectorAll(".opt").forEach(b=>{
+    b.disabled = true;
+    if(b.textContent === q.giusta) b.classList.add("giusta");
+    else if(b===btn && !corretta) b.classList.add("sbagliata");
+    else b.classList.add("spenta");
+  });
+  const ann = document.getElementById("annuncio");
+  ann.className = "annuncio mostra "+(corretta?"ok":"no");
+  ann.innerHTML = corretta
+    ? `<div class="tit">✔ Richtig!</div><div class="regola">${q.nota}</div>`
+    : `<div class="tit">✘ La risposta giusta era: <b>${q.giusta}</b></div><div class="regola">${q.nota}</div>`;
+  document.getElementById("avanti").classList.add("mostra");
+
+  // statistiche
+  stato.tot++; const g = oggi();
+  stato.giorni[g] = stato.giorni[g]||{t:0,o:0};
+  stato.giorni[g].t++;
+  stato.modi[q.modo] = stato.modi[q.modo]||{t:0,o:0};
+  stato.modi[q.modo].t++;
+  const verbo = q.id.split("|")[1];
+  stato.wrong[q.modo] = stato.wrong[q.modo]||[];
+  if(corretta){
+    stato.ok++; stato.giorni[g].o++; stato.modi[q.modo].o++;
+    stato.streak++; stato.best=Math.max(stato.best,stato.streak);
+    stato.wrong[q.modo] = stato.wrong[q.modo].filter(x=>x!==verbo);
+  } else {
+    stato.streak=0;
+    if(!stato.wrong[q.modo].includes(verbo)) stato.wrong[q.modo].push(verbo);
+  }
+  salvaStato();
+  renderTabellone();
+}
+window.rispondi = rispondi;
+function prossima(){ domanda=null; risposto=false; renderDomanda(); window.scrollTo({top:0}); }
+window.prossima = prossima;
+
+function renderProgressi(){
+  const pct = stato.tot? Math.round(100*stato.ok/stato.tot):0;
+  const righe = MODI.filter(m=>!["prog","mix"].includes(m.id)).map(m=>{
+    const s = stato.modi[m.id]||{t:0,o:0};
+    const p = s.t? Math.round(100*s.o/s.t):0;
+    const cls = p>=80?"":(p>=55?"media":"bassa");
+    return `<div class="barra-riga"><span class="nome">${m.nome}</span>
+      <div class="barra-cont"><div class="barra ${s.t?cls:''}" style="width:${s.t?p:0}%"></div></div>
+      <span class="pct">${s.t? p+"%":"—"}</span></div>`;
+  }).join("");
+  const gg = Object.entries(stato.giorni).sort((a,b)=>a[0]<b[0]?-1:1).slice(-7);
+  const maxT = Math.max(1,...gg.map(([,v])=>v.t));
+  const colonne = gg.map(([d,v])=>{
+    const h = Math.max(4, Math.round(60*v.t/maxT));
+    return `<div class="giorno"><div class="colonna" style="height:${h}px" title="${v.o}/${v.t}"></div><span class="data">${d.slice(5).replace("-","/")}</span></div>`;
+  }).join("");
+  const daRipassare = Object.values(stato.wrong).flat();
+  main.innerHTML = `
+    <div class="pannello">
+      <h2>Il tuo tabellone</h2>
+      <div class="statgrid">
+        <div class="stat"><div class="num">${stato.tot}</div><div class="lab">Risposte</div></div>
+        <div class="stat"><div class="num">${pct}%</div><div class="lab">Precisione</div></div>
+        <div class="stat"><div class="num">${stato.best}</div><div class="lab">Serie record</div></div>
+      </div>
+      <h2>Per binario</h2>
+      ${righe}
+      <h2 style="margin-top:16px">Ultimi 7 giorni</h2>
+      <div class="giorni">${colonne || '<p class="nota-storage">Ancora nessun allenamento registrato.</p>'}</div>
+      ${daRipassare.length? `<h2 style="margin-top:16px">Da ripassare</h2><p style="font-size:.85rem;line-height:1.6">${[...new Set(daRipassare)].join(" · ")}</p><p class="nota-storage">Questi verbi ricompaiono più spesso finché non li azzecchi.</p>`:""}
+      ${storageOk? '<p class="nota-storage">✔ I progressi si salvano nel browser di questo dispositivo: puoi chiudere e riprendere nei prossimi giorni.</p>' : '<p class="nota-storage">⚠ Salvataggio non disponibile in questo ambiente: i progressi durano solo per questa sessione.</p>'}
+      <button class="azzera" onclick="azzera()">Azzera tutti i progressi</button>
+    </div>`;
+}
+window.azzera = async function(){
+  if(!confirm("Sicuro? Cancella tutte le statistiche.")) return;
+  stato = {tot:0, ok:0, streak:0, best:0, modi:{}, wrong:{}, giorni:{}};
+  try{ localStorage.removeItem("sprachbahnhof-stato"); }catch(e){}
+  render();
+}
+
+caricaStato();
+</script>
+</body>
+</html>
